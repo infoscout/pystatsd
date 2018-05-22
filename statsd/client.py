@@ -106,19 +106,6 @@ class StatsClientBase(object):
         """Decrement a stat by `count`."""
         self.incr(stat, -count, rate)
 
-    def gauge(self, stat, value, rate=1, delta=False):
-        """Set a gauge value."""
-        if value < 0 and not delta:
-            if rate < 1:
-                if random.random() > rate:
-                    return
-            with self.pipeline() as pipe:
-                pipe._send_stat(stat, '0|g', 1)
-                pipe._send_stat(stat, '%s|g' % value, 1)
-        else:
-            prefix = '+' if delta and value >= 0 else ''
-            self._send_stat(stat, '%s%s|g' % (prefix, value), rate)
-
     def set(self, stat, value, rate=1):
         """Set a set value."""
         self._send_stat(stat, '%s|s' % value, rate)
@@ -165,55 +152,4 @@ class StatsClient(StatsClientBase):
             pass
 
     def pipeline(self):
-        return Pipeline(self)
-
-
-class PipelineBase(StatsClientBase):
-
-    __metaclass__ = abc.ABCMeta
-
-    def __init__(self, client):
-        self._client = client
-        self._prefix = client._prefix
-        self._stats = deque()
-
-    @abc.abstractmethod
-    def _send(self):
-        pass
-
-    def _after(self, data):
-        if data is not None:
-            self._stats.append(data)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, typ, value, tb):
-        self.send()
-
-    def send(self):
-        if not self._stats:
-            return
-        self._send()
-
-    def pipeline(self):
-        return self.__class__(self)
-
-
-class Pipeline(PipelineBase):
-
-    def __init__(self, client):
-        super(Pipeline, self).__init__(client)
-        self._maxudpsize = client._maxudpsize
-
-    def _send(self):
-        data = self._stats.popleft()
-        while self._stats:
-            # Use popleft to preserve the order of the stats.
-            stat = self._stats.popleft()
-            if len(stat) + len(data) + 1 >= self._maxudpsize:
-                self._client._after(data)
-                data = stat
-            else:
-                data += '\n' + stat
-        self._client._after(data)
+        raise NotImplementedError
