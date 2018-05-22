@@ -14,7 +14,7 @@ except ImportError:
     from time import time as time_now
 
 
-__all__ = ['StatsClient', 'TCPStatsClient']
+__all__ = ['StatsClient']
 
 
 def safe_wraps(wrapper, *args, **kwargs):
@@ -168,49 +168,6 @@ class StatsClient(StatsClientBase):
         return Pipeline(self)
 
 
-class TCPStatsClient(StatsClientBase):
-    """TCP version of StatsClient."""
-
-    def __init__(self, host='localhost', port=8125, prefix=None,
-                 timeout=None, ipv6=False):
-        """Create a new client."""
-        self._host = host
-        self._port = port
-        self._ipv6 = ipv6
-        self._timeout = timeout
-        self._prefix = prefix
-        self._sock = None
-
-    def _send(self, data):
-        """Send data to statsd."""
-        if not self._sock:
-            self.connect()
-        self._do_send(data)
-
-    def _do_send(self, data):
-        self._sock.sendall(data.encode('ascii') + b'\n')
-
-    def close(self):
-        if self._sock and hasattr(self._sock, 'close'):
-            self._sock.close()
-        self._sock = None
-
-    def connect(self):
-        fam = socket.AF_INET6 if self._ipv6 else socket.AF_INET
-        family, _, _, _, addr = socket.getaddrinfo(
-            self._host, self._port, fam, socket.SOCK_STREAM)[0]
-        self._sock = socket.socket(family, socket.SOCK_STREAM)
-        self._sock.settimeout(self._timeout)
-        self._sock.connect(addr)
-
-    def pipeline(self):
-        return TCPPipeline(self)
-
-    def reconnect(self, data):
-        self.close()
-        self.connect()
-
-
 class PipelineBase(StatsClientBase):
 
     __metaclass__ = abc.ABCMeta
@@ -260,10 +217,3 @@ class Pipeline(PipelineBase):
             else:
                 data += '\n' + stat
         self._client._after(data)
-
-
-class TCPPipeline(PipelineBase):
-
-    def _send(self):
-        self._client._after('\n'.join(self._stats))
-        self._stats.clear()
