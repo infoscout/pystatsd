@@ -25,12 +25,12 @@ make_val = {
 }
 
 
-def _udp_client(prefix=None, addr=None, port=None, ipv6=False):
+def _udp_client(prefix=None, addr=None, port=None):
     if not addr:
         addr = ADDR[0]
     if not port:
         port = ADDR[1]
-    sc = StatsClient(host=addr, port=port, prefix=prefix, ipv6=ipv6)
+    sc = StatsClient(host=addr, port=port, prefix=prefix)
     sc._sock = mock.Mock()
     return sc
 
@@ -154,21 +154,9 @@ def test_decr_udp():
     _test_decr(cl, 'udp')
 
 
-def test_ipv6_udp():
-    """StatsClient can use to IPv6 address."""
-    addr = ('::1', 8125, 0, 0)
-    cl = _udp_client(addr=addr[0], ipv6=True)
-    _test_ipv6(cl, 'udp', addr)
-
-
 def _test_resolution(cl, proto, addr):
     cl.incr('foo')
     _sock_check(cl._sock, 1, proto, 'foo:1|c', addr=addr)
-
-
-def test_ipv6_resolution_udp():
-    cl = _udp_client(addr='localhost', ipv6=True)
-    _test_resolution(cl, 'udp', ('::1', 8125, 0, 0))
 
 
 def test_ipv4_resolution_udp():

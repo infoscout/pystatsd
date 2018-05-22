@@ -12,6 +12,4 @@ if statsd is None:
     port = getattr(settings, 'STATSD_PORT', defaults.PORT)
     prefix = getattr(settings, 'STATSD_PREFIX', defaults.PREFIX)
     maxudpsize = getattr(settings, 'STATSD_MAXUDPSIZE', defaults.MAXUDPSIZE)
-    ipv6 = getattr(settings, 'STATSD_IPV6', defaults.IPV6)
-    statsd = StatsClient(host=host, port=port, prefix=prefix,
-                         maxudpsize=maxudpsize, ipv6=ipv6)
+    statsd = StatsClient(host=host, port=port, prefix=prefix, maxudpsize=maxudpsize)
