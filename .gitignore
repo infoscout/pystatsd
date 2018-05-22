@@ -130,6 +130,9 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# Pycharm project settings
+.idea
+
 
 # End of https://www.gitignore.io/api/macos,python
 
